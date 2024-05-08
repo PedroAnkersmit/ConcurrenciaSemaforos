@@ -27,13 +27,13 @@ public class Mesa {
 	private Semaphore mutex = new Semaphore(1);
 	private Semaphore hayIngredientes = new Semaphore(0);
 	private Semaphore puedoFumar = new Semaphore(0);
-	private Semaphore puedeIntentarFumar = new Semaphore(1);
 	private Semaphore esperaAgente = new Semaphore(0);
 	private Semaphore puedoPoner = new Semaphore(1);
 
 	//El agente llama a este metodo para poner en la mesa dos ingredientes de los tres
 	public void nuevosIngredientes(int ingr1, int ingr2) throws InterruptedException{
 		//mutex para controlar los ingredientes
+
 		mutex.acquire();
 		for (int i = 0; i < ingr.length; i++) {
 			ingr[i] = false;
@@ -61,8 +61,9 @@ public class Mesa {
 			ingr[i] = false;
 		}
 		mutex.release();
-		puedoFumar.release();
-		puedoFumar.release();
+		for(int i = 0; i < 3; i++){
+			puedoFumar.release();
+		}
 
 	}
 
@@ -71,22 +72,27 @@ public class Mesa {
 
 		//El fumador se para en seco hasta que haya ingredientes en la mesa.
 		hayIngredientes.acquire();
-		puedeIntentarFumar.acquire();
-		mutex.acquire();
-		if(!ingr[id]){
-			mutex.release();
-			puedoFumar.acquire();
-			puedeIntentarFumar.release();
-		} else{
-			mutex.release();
 
+		mutex.acquire();
+		boolean aux = ingr[id];
+		mutex.release();
+
+		if(aux){
+			System.out.println("El fumador " + id + "no puede fumar y se bloquea");
+			puedoFumar.acquire();
 		}
 
 	}
 	
 	//El fumador id indica que ha terminado de fumar
 	public void finFumar(int id) throws InterruptedException{
-		puedoPoner.release();
-		esperaAgente.release();
+		mutex.acquire();
+		boolean aux = ingr[id];
+		mutex.release();
+		if(!aux){
+			puedoPoner.release();
+			esperaAgente.release();
+		}
+
 	}
 }
